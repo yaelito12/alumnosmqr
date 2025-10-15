@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alumno - Sistema de Asistencia QR</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        @keyframes scan {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+        .animate-slide-up { animation: slideUp 0.4s ease-out; }
+        .animate-pulse-slow { animation: pulse 2s infinite; }
+        .scan-line { animation: scan 2s infinite; }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        
+        .card-glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 30px rgba(16, 185, 129, 0.4);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 30px rgba(75, 85, 99, 0.4);
+        }
+        
+        video { transform: scaleX(-1); }
+        
+        @media (max-width: 768px) {
+            h1 { font-size: 1.75rem !important; }
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen py-4 sm:py-8">
+    <div class="container mx-auto px-4 sm:px-6 max-w-2xl">
+        <!-- Header -->
+        <div class="card-glass rounded-3xl shadow-2xl p-6 sm:p-8 mb-6 sm:mb-8 text-center animate-fade-in">
+            <div class="bg-gradient-to-br from-green-500 to-emerald-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-2xl animate-pulse-slow">
+                <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                </svg>
+            </div>
+            <h1 class="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">
+                Registro de Asistencia
+            </h1>
+            <p class="text-gray-600 font-semibold text-base sm:text-lg">Sistema QR Inteligente</p>
+        </div>
+
+        <!-- Formulario -->
+        <div class="card-glass rounded-3xl shadow-2xl p-6 sm:p-8 animate-fade-in" style="animation-delay: 0.2s">
+            <div class="mb-6">
+                <label class="block text-gray-700 font-bold mb-3 text-base sm:text-lg flex items-center gap-2">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path>
+                    </svg>
+                    Número de Control
+                </label>
+                <input 
+                    type="text" 
+                    id="numeroControl" 
+                    placeholder="Ejemplo: 20210001" 
+                    class="w-full px-6 py-4 border-3 border-gray-300 rounded-2xl focus:border-green-500 focus:outline-none text-lg sm:text-xl font-semibold transition-all shadow-sm"
+                    autocomplete="off">
+            </div>
+
+            <div id="botonesContainer">
+                <div class="space-y-4">
+                    <button onclick="iniciarEscaneo()" class="w-full btn-primary text-white py-5 sm:py-6 rounded-2xl font-bold text-lg sm:text-xl flex items-center justify-center gap-3 shadow-2xl">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        Escanear Código QR
+                    </button>
+
+                    <button onclick="registrarManual()" class="w-full btn-secondary text-white py-5 sm:py-6 rounded-2xl font-bold text-lg sm:text-xl flex items-center justify-center gap-3 shadow-xl">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                        </svg>
+                        Ingresar Código Manualmente
+                    </button>
+                </div>
+            </div>
+
+            <!-- Video para escanear -->
+            <div id="videoContainer" class="hidden animate-slide-up">
+                <div class="relative mb-4">
+                    <video id="video" autoplay playsinline class="w-full rounded-3xl shadow-2xl"></video>
+                    <div class="absolute inset-0 border-4 border-green-500 rounded-3xl pointer-events-none"></div>
+                    <div class="absolute top-1/2 left-0 right-0 h-1 bg-green-500 scan-line"></div>
+                </div>
+                <p class="text-center text-white font-bold mb-4 text-base sm:text-lg bg-green-600 bg-opacity-90 rounded-2xl py-3 px-4 shadow-lg">
+                    📱 Apunta la cámara al código QR
+                </p>
+                <button onclick="detenerEscaneo()" class="w-full bg-gradient-to-r from-red-500 to-pink-600 text-white py-4 sm:py-5 rounded-2xl hover:shadow-2xl font-bold text-lg transition-all flex items-center justify-center gap-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    Cancelar Escaneo
+                </button>
+            </div>
+
+            <!-- Instrucciones -->
+            <div class="mt-8 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-5 sm:p-6 border-2 border-blue-100">
+                <h3 class="font-bold text-indigo-900 mb-4 text-lg sm:text-xl flex items-center gap-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    ¿Cómo funciona?
+                </h3>
+                <ol class="space-y-3 text-indigo-800">
+                    <li class="flex items-start gap-3">
+                        <span class="font-bold bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 shadow-lg text-sm">1</span>
+                        <span class="font-semibold pt-1">Ingresa tu <strong>número de control</strong></span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <span class="font-bold bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 shadow-lg text-sm">2</span>
+                        <span class="font-semibold pt-1">Escanea el código QR del salón o ingrésalo manualmente</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <span class="font-bold bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 shadow-lg text-sm">3</span>
+                        <span class="font-semibold pt-1">Tu asistencia se registrará automáticamente ✓</span>
+                    </li>
+                </ol>
+                <div class="mt-5 bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-300 rounded-xl p-4">
+                    <p class="text-yellow-900 text-sm font-bold flex items-start gap-2">
+                        <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        <span>Solo podrás registrar tu asistencia si estás inscrito en la clase por tu profesor</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Historial de asistencias -->
+        <div id="historialContainer" class="mt-6 hidden animate-fade-in">
+            <div class="card-glass rounded-3xl shadow-2xl p-6 sm:p-8">
+                <h3 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3">
+                    <div class="bg-gradient-to-br from-green-500 to-emerald-600 p-3 rounded-2xl">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    Tu Historial de Asistencias
+                </h3>
+                <div id="historialLista" class="space-y-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast de mensajes -->
+    <div id="toast" class="hidden fixed top-4 left-4 right-4 sm:left-auto sm:right-4 z-50 px-6 py-4 rounded-2xl shadow-2xl text-white font-bold max-w-md mx-auto sm:mx-0"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+    <script>
+        let stream = null;
+        let scanning = false;
+
+        function mostrarMensaje(texto, tipo) {
+            const toast = document.getElementById('toast');
+            toast.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <svg class="w-7 h-7 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        ${tipo === 'success' ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>' :
+                          tipo === 'error' ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>' :
+                          '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'}
+                    </svg>
+                    <span class="text-sm sm:text-base">${texto}</span>
+                </div>
+            `;
+            toast.className = `fixed top-4 left-4 right-4 sm:left-auto sm:right-4 z-50 px-6 py-4 rounded-2xl shadow-2xl text-white font-bold max-w-md mx-auto sm:mx-0 animate-fade-in ${
+                tipo === 'success' ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 
+                tipo === 'error' ? 'bg-gradient-to-r from-red-500 to-pink-600' : 
+                'bg-gradient-to-r from-blue-500 to-indigo-600'
+            }`;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 5000);
+        }
+
+        async function iniciarEscaneo() {
+            const numeroControl = document.getElementById('numeroControl').value.trim();
+            if (!numeroControl) {
+                mostrarMensaje('Ingresa tu número de control primero', 'error');
+                return;
+            }
+
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' } 
+                });
+                
+                const video = document.getElementById('video');
+                video.srcObject = stream;
+                
+                document.getElementById('botonesContainer').classList.add('hidden');
+                document.getElementById('videoContainer').classList.remove('hidden');
+                
+                scanning = true;
+                escanearQR();
+                mostrarMensaje('Apunta la cámara al código QR', 'info');
+            } catch (err) {
+                mostrarMensaje('Error al acceder a la cámara. Usa ingreso manual.', 'error');
+                console.error('Error cámara:', err);
+            }
+        }
+
+        function detenerEscaneo() {
+            scanning = false;
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            document.getElementById('botonesContainer').classList.remove('hidden');
+            document.getElementById('videoContainer').classList.add('hidden');
+        }
+
+        function escanearQR() {
+            if (!scanning) return;
+
+            const video = document.getElementById('video');
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.height = video.videoHeight;
+                canvas.width = video.videoWidth;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+                if (code && code.data.startsWith('AULA-')) {
+                    detenerEscaneo();
+                    registrarAsistencia(code.data);
+                    return;
+                }
+            }
+
+            requestAnimationFrame(escanearQR);
+        }
+
+        function registrarManual() {
+            const numeroControl = document.getElementById('numeroControl').value.trim();
+            if (!numeroControl) {
+                mostrarMensaje('Ingresa tu número de control primero', 'error');
+                return;
+            }
+
+            const codigoAula = prompt('Ingresa el código del aula (ej: AULA-1234567890):');
+            if (!codigoAula) return;
+
+            if (!codigoAula.startsWith('AULA-')) {
+                mostrarMensaje('Código de aula no válido', 'error');
+                return;
+            }
+
+            registrarAsistencia(codigoAula);
+        }
+
+        function registrarAsistencia(codigoAula) {
+            const numeroControl = document.getElementById('numeroControl').value.trim();
+
+            const aulas = JSON.parse(localStorage.getItem('aulas')) || [];
+            const alumnosRegistrados = JSON.parse(localStorage.getItem('alumnosRegistrados')) || {};
+            const asistencias = JSON.parse(localStorage.getItem('asistencias')) || {};
+
+            const aula = aulas.find(a => a.codigo === codigoAula);
+            if (!aula) {
+                mostrarMensaje('Código de aula no válido', 'error');
+                return;
+            }
+
+            const alumnosAula = alumnosRegistrados[aula.id] || [];
+            const alumno = alumnosAula.find(a => a.numeroControl === numeroControl);
+
+            if (!alumno) {
+                mostrarMensaje('ERROR: No estás registrado en esta clase. Contacta a tu profesor.', 'error');
+                return;
+            }
+
+            const registrosAula = asistencias[aula.id] || [];
+            const fechaHoy = new Date().toLocaleDateString('es-MX');
+            const yaRegistrado = registrosAula.some(
+                r => r.numeroControl === numeroControl && r.fecha === fechaHoy
+            );
+
+            if (yaRegistrado) {
+                mostrarMensaje('Ya registraste tu asistencia hoy en esta clase', 'error');
+                return;
+            }
+
+            const ahora = new Date();
+            const registro = {
+                numeroControl: numeroControl,
+                nombre: alumno.nombre,
+                fecha: fechaHoy,
+                hora: ahora.toLocaleTimeString('es-MX'),
+                aula: aula.nombre
+            };
+
+            registrosAula.push(registro);
+            asistencias[aula.id] = registrosAula;
+            localStorage.setItem('asistencias', JSON.stringify(asistencias));
+
+            mostrarMensaje(`¡Bienvenido ${alumno.nombre}! Asistencia registrada en ${aula.nombre}`, 'success');
+            document.getElementById('numeroControl').value = '';
+            
+            setTimeout(() => mostrarHistorial(numeroControl), 1000);
+        }
+
+        function mostrarHistorial(numeroControl) {
+            const asistencias = JSON.parse(localStorage.getItem('asistencias')) || {};
+            const aulas = JSON.parse(localStorage.getItem('aulas')) || {};
+            
+            let misAsistencias = [];
+            
+            Object.keys(asistencias).forEach(aulaId => {
+                const aula = aulas.find(a => a.id === aulaId);
+                const registros = asistencias[aulaId].filter(r => r.numeroControl === numeroControl);
+                
+                registros.forEach(reg => {
+                    misAsistencias.push({
+                        ...reg,
+                        nombreAula: aula ? aula.nombre : 'Aula desconocida'
+                    });
+                });
+            });
+
+            if (misAsistencias.length === 0) return;
+
+            misAsistencias.sort((a, b) => {
+                const fechaA = new Date(a.fecha.split('/').reverse().join('-') + ' ' + a.hora);
+                const fechaB = new Date(b.fecha.split('/').reverse().join('-') + ' ' + b.hora);
+                return fechaB - fechaA;
+            });
+
+            const historialContainer = document.getElementById('historialContainer');
+            const historialLista = document.getElementById('historialLista');
+            
+            historialLista.innerHTML = misAsistencias.slice(0, 10).map((reg, index) => `
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-4 border-l-4 border-green-500 shadow-md hover:shadow-lg transition-all" style="animation-delay: ${index * 0.1}s">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="font-bold text-gray-800 text-base sm:text-lg">${reg.nombreAula}</p>
+                            <p class="text-sm text-gray-600 font-semibold mt-1">
+                                <span class="inline-flex items-center gap-1">
+                                    📅 ${reg.fecha}
+                                </span>
+                                <span class="inline-flex items-center gap-1 ml-3">
+                                    ⏰ ${reg.hora}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="bg-green-500 text-white rounded-full p-2 shadow-lg">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            historialContainer.classList.remove('hidden');
+        }
+
+        window.addEventListener('load', () => {
+            const ultimoNumControl = localStorage.getItem('ultimoNumControl');
+            if (ultimoNumControl) {
+                document.getElementById('numeroControl').value = ultimoNumControl;
+                mostrarHistorial(ultimoNumControl);
+            }
+        });
+
+        document.getElementById('numeroControl').addEventListener('change', (e) => {
+            if (e.target.value.trim()) {
+                localStorage.setItem('ultimoNumControl', e.target.value.trim());
+                mostrarHistorial(e.target.value.trim());
+            }
+        });
+    </script>
+</body>
+</html>
