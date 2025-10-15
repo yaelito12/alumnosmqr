@@ -64,7 +64,9 @@
             box-shadow: 0 15px 30px rgba(75, 85, 99, 0.4);
         }
         
-        video { transform: scaleX(-1); }
+        #video { 
+            object-fit: cover;
+        }
         
         @media (max-width: 768px) {
             h1 { font-size: 1.75rem !important; }
@@ -126,11 +128,15 @@
             <div id="videoContainer" class="hidden animate-slide-up">
                 <div class="relative mb-4">
                     <video id="video" autoplay playsinline class="w-full rounded-3xl shadow-2xl"></video>
-                    <div class="absolute inset-0 border-4 border-green-500 rounded-3xl pointer-events-none"></div>
-                    <div class="absolute top-1/2 left-0 right-0 h-1 bg-green-500 scan-line"></div>
+                    <div class="absolute inset-0 border-4 border-green-500 rounded-3xl pointer-events-none opacity-75"></div>
+                    <div class="absolute top-1/2 left-0 right-0 h-1 bg-green-500 scan-line opacity-75"></div>
+                    <!-- Guías de alineación -->
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div class="border-4 border-white w-64 h-64 rounded-2xl shadow-2xl opacity-50"></div>
+                    </div>
                 </div>
                 <p class="text-center text-white font-bold mb-4 text-base sm:text-lg bg-green-600 bg-opacity-90 rounded-2xl py-3 px-4 shadow-lg">
-                    📱 Apunta la cámara al código QR
+                    📱 Centra el código QR en el recuadro blanco
                 </p>
                 <button onclick="detenerEscaneo()" class="w-full bg-gradient-to-r from-red-500 to-pink-600 text-white py-4 sm:py-5 rounded-2xl hover:shadow-2xl font-bold text-lg transition-all flex items-center justify-center gap-2">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -226,22 +232,33 @@
             }
 
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'environment' } 
-                });
+                const constraints = {
+                    video: {
+                        facingMode: { ideal: 'environment' },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                };
+                
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
                 
                 const video = document.getElementById('video');
                 video.srcObject = stream;
                 
-                document.getElementById('botonesContainer').classList.add('hidden');
-                document.getElementById('videoContainer').classList.remove('hidden');
+                // Esperar a que el video esté listo
+                video.onloadedmetadata = () => {
+                    video.play();
+                    document.getElementById('botonesContainer').classList.add('hidden');
+                    document.getElementById('videoContainer').classList.remove('hidden');
+                    
+                    scanning = true;
+                    escanearQR();
+                    mostrarMensaje('Apunta la cámara al código QR del aula', 'info');
+                };
                 
-                scanning = true;
-                escanearQR();
-                mostrarMensaje('Apunta la cámara al código QR', 'info');
             } catch (err) {
-                mostrarMensaje('Error al acceder a la cámara. Usa ingreso manual.', 'error');
-                console.error('Error cámara:', err);
+                console.error('Error al acceder a la cámara:', err);
+                mostrarMensaje('No se pudo acceder a la cámara. Usa ingreso manual.', 'error');
             }
         }
 
@@ -268,12 +285,19 @@
                 context.drawImage(video, 0, 0, canvas.width, canvas.height);
                 
                 const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-                const code = jsQR(imageData.data, imageData.width, imageData.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                    inversionAttempts: "dontInvert",
+                });
 
-                if (code && code.data.startsWith('AULA-')) {
-                    detenerEscaneo();
-                    registrarAsistencia(code.data);
-                    return;
+                if (code && code.data) {
+                    console.log('Código detectado:', code.data);
+                    if (code.data.startsWith('AULA-')) {
+                        detenerEscaneo();
+                        registrarAsistencia(code.data);
+                        return;
+                    } else {
+                        mostrarMensaje('Código QR no válido. Debe ser un código de aula.', 'error');
+                    }
                 }
             }
 
