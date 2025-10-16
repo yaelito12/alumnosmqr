@@ -160,13 +160,13 @@
             
             if (!aulaId) {
                 mostrarMensaje('❌ Código de aula no válido', 'error');
-                document.getElementById('aulaInfo').textContent = 'Código inválido';
+                document.getElementById('aulaInfo').textContent = 'Escanea un código QR válido';
                 return;
             }
 
-            // Obtener información del aula desde localStorage
-            const aulas = JSON.parse(localStorage.getItem('aulas')) || [];
-            aulaInfo = aulas.find(a => a.id === aulaId || a.codigo === aulaId);
+            // Obtener información del aula desde localStorage del profesor
+            const aulas = JSON.parse(localStorage.getItem('aulas_profesor')) || [];
+            aulaInfo = aulas.find(a => a.id === aulaId);
             
             if (aulaInfo) {
                 document.getElementById('aulaInfo').textContent = aulaInfo.nombre;
@@ -189,16 +189,16 @@
                 return;
             }
 
-            // Obtener datos actuales
-            const aulas = JSON.parse(localStorage.getItem('aulas')) || [];
-            const alumnosRegistrados = JSON.parse(localStorage.getItem('alumnosRegistrados')) || {};
-            const asistencias = JSON.parse(localStorage.getItem('asistencias')) || {};
+            // Obtener datos actuales del profesor
+            const aulas = JSON.parse(localStorage.getItem('aulas_profesor')) || [];
+            const alumnosRegistrados = JSON.parse(localStorage.getItem('alumnos_profesor')) || {};
+            const asistencias = JSON.parse(localStorage.getItem('asistencias_profesor')) || {};
 
-            // Buscar aula por ID o código
-            const aula = aulas.find(a => a.id === aulaId || a.codigo === aulaId);
+            // Buscar aula por ID
+            const aula = aulas.find(a => a.id === aulaId);
             
             if (!aula) {
-                mostrarMensaje('❌ Aula no encontrada', 'error');
+                mostrarMensaje('❌ Aula no encontrada. Asegúrate de estar en la misma red que el profesor.', 'error');
                 return;
             }
 
@@ -214,7 +214,7 @@
                 };
                 alumnosAula.push(alumno);
                 alumnosRegistrados[aula.id] = alumnosAula;
-                localStorage.setItem('alumnosRegistrados', JSON.stringify(alumnosRegistrados));
+                localStorage.setItem('alumnos_profesor', JSON.stringify(alumnosRegistrados));
             }
 
             // Verificar si ya registró asistencia hoy
@@ -241,18 +241,13 @@
 
             registrosAula.push(registro);
             asistencias[aula.id] = registrosAula;
-            localStorage.setItem('asistencias', JSON.stringify(asistencias));
+            localStorage.setItem('asistencias_profesor', JSON.stringify(asistencias));
 
             // Mostrar mensaje de éxito
             document.getElementById('formulario').classList.add('hidden');
             document.getElementById('exitoMensaje').classList.remove('hidden');
             
             mostrarMensaje(`🎉 ¡Bienvenido ${nombreCompleto}!`, 'success');
-
-            // Disparar evento personalizado para notificar al profesor
-            window.dispatchEvent(new CustomEvent('nuevaAsistencia', {
-                detail: { aulaId: aula.id, registro: registro }
-            }));
         }
 
         // Cargar información al iniciar
